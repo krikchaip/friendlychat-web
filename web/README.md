@@ -1,7 +1,11 @@
-# Firebase Web Codelab - Final code
+# Firebase Web Codelab - Short notes
 
-This folder contains the final code of the [Firebase Web Codelab](https://codelabs.developers.google.com/codelabs/firebase-web/).
+## CLI commands using in this project
 
-You can use this app directly if you'd like to see the finished app but before you do follow the [Create a Firebase Project and Setup](https://codelabs.developers.google.com/codelabs/firebase-web/#3) step of the Codelab instructions
-
-If you'd like to follow the step by step codelab start with the [web-start](../web-start) directory.
+- `firebase login`
+- `firebase use --add` (connect to your firebase project)
+- `firebase serve only --hosting -p 3333` (start dev server)
+- `firebase deploy --only firestore` (deploy firestore rules)
+- `firebase deploy --only storage` (deploy storage rules)
+- `firebase deploy --except functions`
+- `firebase open hosting:site`
