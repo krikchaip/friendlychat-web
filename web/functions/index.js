@@ -70,7 +70,35 @@ exports.blurOffensiveImages =
     console.log('The image', object.name, 'has been detected as OK.');
   });
 
-// TODO(DEVELOPER): Write the sendNotifications Function here.
+// Sends a notifications to all users when a new message is posted.
+exports.sendNotifications = functions.firestore.document('messages/{messageId}').onCreate(
+  async (snapshot) => {
+    // Notification details.
+    const text = snapshot.data().text;
+    const payload = {
+      notification: {
+        title: `${snapshot.data().name} posted ${text ? 'a message' : 'an image'}`,
+        body: text ? (text.length <= 100 ? text : text.substring(0, 97) + '...') : '',
+        icon: snapshot.data().profilePicUrl || '/images/profile_placeholder.png',
+        click_action: `https://${process.env.GCLOUD_PROJECT}.firebaseapp.com`,
+      }
+    };
+
+    // Get the list of device tokens.
+    const allTokens = await firebase.firestore().collection('fcmTokens').get();
+    const tokens = [];
+
+    allTokens.forEach((tokenDoc) => {
+      tokens.push(tokenDoc.id);
+    });
+
+    if (tokens.length > 0) {
+      // Send notifications to all tokens.
+      const response = await firebase.messaging().sendToDevice(tokens, payload);
+      await cleanupTokens(response, tokens);
+      console.log('Notifications have been sent and tokens cleaned up.');
+    }
+  });
 
 // Blurs the given image located in the given bucket using ImageMagick.
 async function blurImage(filePath) {
@@ -97,4 +125,23 @@ async function blurImage(filePath) {
   // Indicate that the message has been moderated.
   await firebase.firestore().collection('messages').doc(messageId).update({moderated: true});
   console.log('Marked the image as moderated in the database.');
+}
+
+// Cleans up the tokens that are no longer valid.
+function cleanupTokens(response, tokens) {
+ // For each notification we check if there was an error.
+ const tokensDelete = [];
+ response.results.forEach((result, index) => {
+   const error = result.error;
+   if (error) {
+     console.error('Failure sending notification to', tokens[index], error);
+     // Cleanup the tokens who are not registered anymore.
+     if (error.code === 'messaging/invalid-registration-token' ||
+         error.code === 'messaging/registration-token-not-registered') {
+       const deleteTask = firebase.firestore().collection('messages').doc(tokens[index]).delete();
+       tokensDelete.push(deleteTask);
+     }
+   }
+ });
+ return Promise.all(tokensDelete);
 }
