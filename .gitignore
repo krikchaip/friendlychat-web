@@ -12,5 +12,6 @@
 **/cloud-functions/functions/node_modules
 **/.firebaserc
 **/firebase-debug.log
+**/firestore-debug.log
 **/package-lock.json
 **/.firebase
