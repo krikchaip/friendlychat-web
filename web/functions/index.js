@@ -14,11 +14,31 @@
  * limitations under the License.
  */
 
-// Note: You will edit this file in the follow up codelab about the Cloud Functions for Firebase.
+// Import the Firebase SDK for Google Cloud Functions.
+const functions = require('firebase-functions');
 
-// TODO(DEVELOPER): Import the Cloud Functions for Firebase and the Firebase Admin modules here.
+// Import and initialize the Firebase Admin SDK.
+const firebase = require('firebase-admin');
+firebase.initializeApp();
 
-// TODO(DEVELOPER): Write the addWelcomeMessages Function here.
+// Adds a message that welcomes new users into the chat.
+// ! https://stackoverflow.com/questions/57576674/firebase-trigger-function-ignored-due-to-missing-firebaseauth-googleapis-com-em
+exports.addWelcomeMessages = functions.auth.user().onCreate(async (user) => {
+  console.log('A new user signed in for the first time.');
+
+  const fullName = user.displayName || 'Anonymous';
+
+  // Saves the new welcome message into the database
+  // which then displays it in the FriendlyChat clients.
+  await firebase.firestore().collection('messages').add({
+    name: 'Firebase Bot',
+    profilePicUrl: '/images/firebase-logo.png', // Firebase logo
+    text: `${fullName} signed in for the first time! Welcome!`,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  console.log('Welcome message written to database.');
+});
 
 // TODO(DEVELOPER): Write the blurOffensiveImages Function here.
 
